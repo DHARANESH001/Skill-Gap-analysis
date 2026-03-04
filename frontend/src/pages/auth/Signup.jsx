@@ -1,34 +1,37 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { User, Mail, Lock, Eye, EyeOff, GraduationCap, Users, Shield } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, UserPlus, GraduationCap, Users, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 import './Auth.css';
 
-const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    role: 'student',
+const Signup = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    email: '', 
+    password: '', 
+    confirmPassword: '',
+    role: 'student'
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  
+  const { signup } = useAuth();
+
   const roles = [
     {
       value: 'student',
       label: 'Student',
       icon: GraduationCap,
-      description: 'Access your learning dashboard',
+      description: 'Start your learning journey',
     },
     {
       value: 'coordinator',
       label: 'Coordinator',
       icon: Users,
-      description: 'Manage department analytics',
+      description: 'Manage and track progress',
     },
     {
       value: 'admin',
@@ -37,9 +40,14 @@ const Login = () => {
       description: 'System administration',
     },
   ];
-  
+
   const validateForm = () => {
     const newErrors = {};
+    if (!formData.name) {
+      newErrors.name = 'Name is required';
+    } else if (formData.name.length < 2) {
+      newErrors.name = 'Name must be at least 2 characters';
+    }
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -50,13 +58,18 @@ const Login = () => {
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
     if (!formData.role) {
       newErrors.role = 'Please select a role';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -70,7 +83,7 @@ const Login = () => {
       }));
     }
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -78,36 +91,43 @@ const Login = () => {
     }
     setIsLoading(true);
     try {
-      const result = await login(formData);
+      const result = await signup({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role
+      });
+      
       if (result.success) {
-        toast.success('Login successful!');
-        navigate(`/${formData.role}/dashboard`);
+        toast.success('Account created successfully!');
+        navigate('/login');
       } else {
-        toast.error(result.error);
+        toast.error(result.error || 'Signup failed');
       }
     } catch (error) {
-      toast.error('Login failed. Please try again.');
+      toast.error('Signup failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
+
   return (
     <div className="login-page">
       <div className="background-overlay"></div>
       <div className="left-panel">
         <div className="left-content">
           <h1>SKILL ANALYSIS</h1>
-          <h2>Welcome Back</h2>
+          <h2>Create Account</h2>
           <p>
-            Empower your skill development with intelligent monitoring and analytics.
-            <b> SKILL ANALYSIS</b> helps you track progress, identify gaps, and
-            achieve your learning goals — ensuring better career outcomes and smarter development.
+            Join our platform to enhance your skills and track your progress.
+            <b> SKILL ANALYSIS</b> helps you identify strengths, improve weaknesses, and
+            achieve your career goals — ensuring professional growth and success.
           </p>
         </div>
       </div>
       <div className="right-panel">
         <div className="login-card">
-          <h2>Sign In</h2>
+          <h2>Sign Up</h2>
           <form onSubmit={handleSubmit}>
             {/* Role Selection */}
             <div className="role-selection">
@@ -134,6 +154,23 @@ const Login = () => {
                 })}
               </div>
               {errors.role && <p className="error-text">{errors.role}</p>}
+            </div>
+
+            {/* Name */}
+            <div className="input-group">
+              <div className="input-wrapper">
+                <UserPlus className="input-icon" />
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className={`login-input ${errors.name ? 'error' : ''}`}
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+              {errors.name && <p className="error-text">{errors.name}</p>}
             </div>
 
             {/* Email */}
@@ -163,7 +200,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className={`login-input ${errors.password ? 'error' : ''}`}
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                   required
                 />
                 <button
@@ -177,38 +214,53 @@ const Login = () => {
               {errors.password && <p className="error-text">{errors.password}</p>}
             </div>
 
+            {/* Confirm Password */}
+            <div className="input-group">
+              <div className="input-wrapper">
+                <Lock className="input-icon" />
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={`login-input ${errors.confirmPassword ? 'error' : ''}`}
+                  placeholder="Confirm your password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="password-toggle"
+                >
+                  {showConfirmPassword ? <EyeOff className="toggle-icon" /> : <Eye className="toggle-icon" />}
+                </button>
+              </div>
+              {errors.confirmPassword && <p className="error-text">{errors.confirmPassword}</p>}
+            </div>
+
             {/* Submit Button */}
             <button type="submit" disabled={isLoading} className="login-button">
               {isLoading ? (
                 <>
                   <div className="spinner"></div>
-                  <span>Signing in...</span>
+                  <span>Creating Account...</span>
                 </>
               ) : (
                 <>
-                  <User className="button-icon" />
-                  <span>Sign In</span>
+                  <UserPlus className="button-icon" />
+                  <span>Create Account</span>
                 </>
               )}
             </button>
 
             <p className="signup-text">
-              Don't have an account? <a href="/register">Create an Account</a>
+              Already have an account? <a href="/login">Sign In</a>
             </p>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="demo-credentials">
-            <p className="demo-title">Demo Credentials:</p>
-            <div className="demo-list">
-              <p><strong>Student:</strong> student@example.com / password</p>
-              <p><strong>Coordinator:</strong> coordinator@example.com / password</p>
-              <p><strong>Admin:</strong> admin@example.com / password</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
   );
 };
-export default Login;
+
+export default Signup;

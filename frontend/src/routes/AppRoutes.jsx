@@ -3,33 +3,26 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PrivateRoute from './PrivateRoute';
 import RoleProtectedRoute from '../components/common/RoleProtectedRoute';
-
 // Auth Pages
 import Login from '../pages/auth/Login';
 import Unauthorized from '../pages/auth/Unauthorized';
-
 // Student Pages
 import StudentDashboard from '../pages/student/StudentDashboard';
 import SkillProgress from '../pages/student/SkillProgress';
 import StudentProfile from '../pages/student/StudentProfile';
-
 // Coordinator Pages
 import CoordinatorDashboard from '../pages/coordinator/CoordinatorDashboard';
 import UploadData from '../pages/coordinator/UploadData';
 import SkillGapAnalysis from '../pages/coordinator/SkillGapAnalysis';
 import DepartmentReports from '../pages/coordinator/DepartmentReports';
-
 // Admin Pages
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import ManageUsers from '../pages/admin/ManageUsers';
 import ManageDepartments from '../pages/admin/ManageDepartments';
-
 // Common
 import Home from '../pages/Home';
-
 const AppRoutes = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
-
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
@@ -41,10 +34,8 @@ const AppRoutes = () => {
       </div>
     );
   }
-
   const getDefaultRoute = () => {
     if (!isAuthenticated) return '/login';
-    
     switch (user?.role) {
       case 'student':
         return '/student/dashboard';
@@ -56,14 +47,12 @@ const AppRoutes = () => {
         return '/login';
     }
   };
-
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<Navigate to={getDefaultRoute()} replace />} />
-      <Route path="/login" element={<Login />} />
+      {/* <Route path="/" element={<Navigate to={getDefaultRoute()} replace />} /> */}
+      <Route path="/" element={<Login />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
-      
       {/* Student Routes */}
       <Route path="/student/dashboard" element={
         <PrivateRoute>
@@ -86,7 +75,6 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
-      
       {/* Coordinator Routes */}
       <Route path="/coordinator/dashboard" element={
         <PrivateRoute>
@@ -116,7 +104,6 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
-      
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={
         <PrivateRoute>
@@ -139,11 +126,9 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
-      
       {/* Catch all route */}
       <Route path="*" element={<Navigate to={getDefaultRoute()} replace />} />
     </Routes>
   );
 };
-
 export default AppRoutes;
