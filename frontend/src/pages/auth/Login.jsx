@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { User, Mail, Lock, Eye, EyeOff, GraduationCap, Users, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -193,7 +193,7 @@ const Login = () => {
             </button>
 
             <p className="signup-text">
-              Don't have an account? <a href="/register">Create an Account</a>
+              Don't have an account? <Link to="/register">Create an Account</Link>
             </p>
           </form>
 

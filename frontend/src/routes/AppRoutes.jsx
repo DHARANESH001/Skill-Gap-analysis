@@ -5,6 +5,7 @@ import PrivateRoute from './PrivateRoute';
 import RoleProtectedRoute from '../components/common/RoleProtectedRoute';
 // Auth Pages
 import Login from '../pages/auth/Login';
+import Signup from '../pages/auth/Signup';
 import Unauthorized from '../pages/auth/Unauthorized';
 // Student Pages
 import StudentDashboard from '../pages/student/StudentDashboard';
@@ -52,6 +53,8 @@ const AppRoutes = () => {
       {/* Public Routes */}
       {/* <Route path="/" element={<Navigate to={getDefaultRoute()} replace />} /> */}
       <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Signup />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       {/* Student Routes */}
       <Route path="/student/dashboard" element={
