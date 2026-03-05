@@ -3,15 +3,19 @@ import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import AppRoutes from './routes/AppRoutes';
+import Navbar from './components/common/Navbar';
+import Footer from './components/common/Footer';
 import './index.css';
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <Navbar />
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <AppRoutes />
         </div>
+        <Footer />
         <Toaster
           position="top-right"
           toastOptions={{
