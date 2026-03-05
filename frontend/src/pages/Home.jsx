@@ -97,17 +97,17 @@ const Home = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={getStarted}
+                onClick={() => navigate('/login')}
                 className="btn btn-primary text-lg px-8 py-3 flex items-center justify-center space-x-2"
               >
-                <span>Get Started</span>
+                <span>Login</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
               <button
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/register')}
                 className="btn btn-secondary text-lg px-8 py-3"
               >
-                View Demo
+                Sign Up
               </button>
             </div>
           </div>

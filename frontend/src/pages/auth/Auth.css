@@ -453,39 +453,6 @@
   color: #764ba2;
   text-decoration: underline;
 }
-
-/* Demo Credentials */
-.demo-credentials {
-  margin-top: 2rem;
-  padding: 1.2rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 12px;
-  text-align: left;
-  border: 1px solid #e0e0e0;
-}
-
-.demo-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 0.8rem;
-  color: #555;
-}
-
-.demo-list {
-  font-size: 0.8rem;
-  color: #666;
-  line-height: 1.5;
-}
-
-.demo-list p {
-  margin: 0.3rem 0;
-}
-
-.demo-list strong {
-  color: #333;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
   .login-page {
     flex-direction: column;
@@ -537,11 +504,6 @@
 
   .input-group {
     margin-bottom: 1rem;
-  }
-
-  .demo-credentials {
-    margin-top: 1.5rem;
-    padding: 1rem;
   }
 }
 

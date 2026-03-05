@@ -196,16 +196,6 @@ const Login = () => {
               Don't have an account? <a href="/register">Create an Account</a>
             </p>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="demo-credentials">
-            <p className="demo-title">Demo Credentials:</p>
-            <div className="demo-list">
-              <p><strong>Student:</strong> student@example.com / password</p>
-              <p><strong>Coordinator:</strong> coordinator@example.com / password</p>
-              <p><strong>Admin:</strong> admin@example.com / password</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
