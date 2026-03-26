@@ -100,7 +100,7 @@ const Signup = () => {
       
       if (result.success) {
         toast.success('Account created successfully!');
-        navigate('/login');
+        navigate(`/${formData.role}/dashboard`);
       } else {
         toast.error(result.error || 'Signup failed');
       }

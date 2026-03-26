@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api';
 
+<<<<<<< HEAD
 // Mock data for development
 const mockUsers = [
   {
@@ -36,6 +37,8 @@ const mockUsers = [
   },
 ];
 
+=======
+>>>>>>> 2bac507fbb871c094021343de590ebd96fd79b52
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -69,6 +72,7 @@ api.interceptors.response.use(
 
 export const authService = {
   login: async (credentials) => {
+<<<<<<< HEAD
     try {
       // Map email to username for backend compatibility
       const loginData = {
@@ -162,33 +166,30 @@ export const authService = {
       }
       throw new Error('No token found');
     }
+=======
+    const response = await api.post('/auth/login', credentials);
+    return response.data;
+  },
+
+  signup: async (userData) => {
+    const response = await api.post('/auth/register', userData);
+    return response.data;
+  },
+
+  getCurrentUser: async () => {
+    const response = await api.get('/auth/me');
+    return response.data;
+>>>>>>> 2bac507fbb871c094021343de590ebd96fd79b52
   },
 
   logout: async () => {
-    try {
-      // Mock logout for development
-      localStorage.removeItem('token');
-    } catch (error) {
-      throw new Error('Logout failed');
-    }
+    await api.post('/auth/logout');
+    localStorage.removeItem('token');
   },
 
   refreshToken: async () => {
-    // Mock refresh token for development
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decoded = JSON.parse(atob(token));
-        const newToken = btoa(JSON.stringify({ 
-          user: decoded.user, 
-          timestamp: Date.now() 
-        }));
-        return { token: newToken };
-      } catch (error) {
-        throw new Error('Token refresh failed');
-      }
-    }
-    throw new Error('No token to refresh');
+    const response = await api.post('/auth/refresh');
+    return response.data;
   },
 };
 

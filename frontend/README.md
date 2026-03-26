@@ -198,15 +198,7 @@ npm run build
 npm run preview
 ```
 
-## 🔐 Authentication
-
-The application includes a mock authentication system. Demo credentials are provided on the login page:
-
-- **Student**: `student@example.com` / `password`
-- **Coordinator**: `coordinator@example.com` / `password`
-- **Admin**: `admin@example.com` / `password`
-
-## 📊 Key Features
+##  Key Features
 
 ### 📈 Data Visualization
 - **Line Charts**: Performance trends over time

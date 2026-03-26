@@ -3,28 +3,35 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PrivateRoute from './PrivateRoute';
 import RoleProtectedRoute from '../components/common/RoleProtectedRoute';
+
 // Auth Pages
 import Login from '../pages/auth/Login';
 import Signup from '../pages/auth/Signup';
 import Unauthorized from '../pages/auth/Unauthorized';
+
 // Student Pages
 import StudentDashboard from '../pages/student/StudentDashboard';
 import SkillProgress from '../pages/student/SkillProgress';
 import StudentProfile from '../pages/student/StudentProfile';
+
 // Coordinator Pages
 import CoordinatorDashboard from '../pages/coordinator/CoordinatorDashboard';
 import UploadData from '../pages/coordinator/UploadData';
 import SkillGapAnalysis from '../pages/coordinator/SkillGapAnalysis';
 import DepartmentReports from '../pages/coordinator/DepartmentReports';
+
 // Admin Pages
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import ManageUsers from '../pages/admin/ManageUsers';
 import ManageDepartments from '../pages/admin/ManageDepartments';
+
 // Common
 import Home from '../pages/Home';
+
 const AppRoutes = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
-  // Show loading spinner while checking authentication
+
+  // Loading screen
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -35,6 +42,7 @@ const AppRoutes = () => {
       </div>
     );
   }
+
   const getDefaultRoute = () => {
     if (!isAuthenticated) return '/login';
     switch (user?.role) {
@@ -48,14 +56,18 @@ const AppRoutes = () => {
         return '/login';
     }
   };
+
   return (
     <Routes>
       {/* Public Routes */}
-      {/* <Route path="/" element={<Navigate to={getDefaultRoute()} replace />} /> */}
-      <Route path="/" element={<Login />} />
+
+      {/* ✅ FIXED ROOT ROUTE */}
+      <Route path="/" element={<Navigate to={getDefaultRoute()} replace />} />
+
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Signup />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+
       {/* Student Routes */}
       <Route path="/student/dashboard" element={
         <PrivateRoute>
@@ -64,6 +76,7 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
+
       <Route path="/student/skill-progress" element={
         <PrivateRoute>
           <RoleProtectedRoute requiredRole="student">
@@ -71,6 +84,7 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
+
       <Route path="/student/profile" element={
         <PrivateRoute>
           <RoleProtectedRoute requiredRole="student">
@@ -78,6 +92,7 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
+
       {/* Coordinator Routes */}
       <Route path="/coordinator/dashboard" element={
         <PrivateRoute>
@@ -86,6 +101,7 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
+
       <Route path="/coordinator/upload-data" element={
         <PrivateRoute>
           <RoleProtectedRoute requiredRole="coordinator">
@@ -93,6 +109,7 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
+
       <Route path="/coordinator/skill-gap-analysis" element={
         <PrivateRoute>
           <RoleProtectedRoute requiredRole="coordinator">
@@ -100,6 +117,7 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
+
       <Route path="/coordinator/department-reports" element={
         <PrivateRoute>
           <RoleProtectedRoute requiredRole="coordinator">
@@ -107,6 +125,7 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
+
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={
         <PrivateRoute>
@@ -115,6 +134,7 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
+
       <Route path="/admin/manage-users" element={
         <PrivateRoute>
           <RoleProtectedRoute requiredRole="admin">
@@ -122,6 +142,7 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
+
       <Route path="/admin/manage-departments" element={
         <PrivateRoute>
           <RoleProtectedRoute requiredRole="admin">
@@ -129,9 +150,11 @@ const AppRoutes = () => {
           </RoleProtectedRoute>
         </PrivateRoute>
       } />
-      {/* Catch all route */}
+
+      {/* Catch all */}
       <Route path="*" element={<Navigate to={getDefaultRoute()} replace />} />
     </Routes>
   );
 };
+
 export default AppRoutes;
