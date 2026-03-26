@@ -20,7 +20,7 @@ const authReducer = (state, action) => {
         token: action.payload.token,
         isAuthenticated: true,
         isLoading: false,
-        role: action.payload.user.role,
+        role: action.payload.user?.role || null,
       };
     case 'LOGIN_FAILURE':
       return {
@@ -49,6 +49,7 @@ const authReducer = (state, action) => {
       return {
         ...state,
         user: { ...state.user, ...action.payload },
+        role: action.payload?.role || state.role,
       };
     default:
       return state;
@@ -84,7 +85,9 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
+      console.log('AuthContext login called with:', credentials);
       const response = await authService.login(credentials);
+      console.log('AuthContext received response:', response);
       localStorage.setItem('token', response.token);
       dispatch({
         type: 'LOGIN_SUCCESS',
@@ -98,6 +101,22 @@ export const AuthProvider = ({ children }) => {
         success: false, 
         error: error.message || 'Login failed' 
       };
+    }
+  };
+
+  const signup = async (userData) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      const response = await authService.signup(userData);
+      return { success: true, data: response };
+    } catch (error) {
+      console.error('Signup error:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Signup failed' 
+      };
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
@@ -116,6 +135,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     ...state,
     login,
+    signup,
     logout,
     updateUser,
   };
