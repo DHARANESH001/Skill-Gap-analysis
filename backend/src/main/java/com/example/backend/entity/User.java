@@ -53,6 +53,12 @@ public class User implements UserDetails {
     @Column(name = "roll_number")
     private String rollNumber;
 
+    @Column(name = "leetcode_username")
+    private String leetcodeUsername;
+
+    @Column(name = "codechef_username")
+    private String codechefUsername;
+
     @Column(name = "join_date")
     private LocalDateTime joinDate;
 
@@ -175,6 +181,22 @@ public class User implements UserDetails {
 
     public void setRollNumber(String rollNumber) {
         this.rollNumber = rollNumber;
+    }
+
+    public String getLeetcodeUsername() {
+        return leetcodeUsername;
+    }
+
+    public void setLeetcodeUsername(String leetcodeUsername) {
+        this.leetcodeUsername = leetcodeUsername;
+    }
+
+    public String getCodechefUsername() {
+        return codechefUsername;
+    }
+
+    public void setCodechefUsername(String codechefUsername) {
+        this.codechefUsername = codechefUsername;
     }
 
     public LocalDateTime getJoinDate() {

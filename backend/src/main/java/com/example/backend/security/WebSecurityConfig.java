@@ -56,6 +56,8 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/leetcode/**").permitAll()
+                        .requestMatchers("/api/coding-platform/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
