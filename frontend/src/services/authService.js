@@ -1,15 +1,12 @@
 import axios from 'axios';
-
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api';
-
-<<<<<<< HEAD
 // Mock data for development
 const mockUsers = [
   {
     id: '1',
     name: 'John Doe',
     email: 'student@example.com',
-    username: 'student', // Email prefix
+    username: 'student',
     password: 'password',
     role: 'student',
     department: 'Computer Science',
@@ -21,7 +18,7 @@ const mockUsers = [
     id: '2',
     name: 'Jane Smith',
     email: 'coordinator@example.com',
-    username: 'coordinator', // Email prefix
+    username: 'coordinator',
     password: 'password',
     role: 'coordinator',
     department: 'Computer Science',
@@ -30,22 +27,19 @@ const mockUsers = [
     id: '3',
     name: 'Admin User',
     email: 'admin@example.com',
-    username: 'admin', // Email prefix
+    username: 'admin',
     password: 'password',
     role: 'admin',
     department: 'Administration',
   },
 ];
-
-=======
->>>>>>> 2bac507fbb871c094021343de590ebd96fd79b52
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
-
+// Attach token to request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -54,11 +48,9 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
-
+// Handle unauthorized response
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -69,21 +61,16 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
 export const authService = {
   login: async (credentials) => {
-<<<<<<< HEAD
     try {
-      // Map email to username for backend compatibility
       const loginData = {
-        username: credentials.email.split('@')[0], // Use email prefix as username
-        password: credentials.password
+        username: credentials.email.split('@')[0],
+        password: credentials.password,
       };
-      console.log('Sending login data:', JSON.stringify(loginData, null, 2));
+      console.log('Sending login data:', loginData);
       const response = await api.post('/auth/signin', loginData);
-      console.log('Backend response:', JSON.stringify(response.data, null, 2));
-      
-      // Create a user object that matches the frontend expectations
+      console.log('Backend response:', response.data);
       const user = {
         id: response.data.id,
         name: response.data.name,
@@ -92,105 +79,80 @@ export const authService = {
         role: response.data.role,
         department: response.data.department,
         year: response.data.year,
-        rollNumber: response.data.rollNumber
+        rollNumber: response.data.rollNumber,
       };
-      
       return {
-        user: user,
+        user,
         token: response.data.token,
       };
     } catch (error) {
       console.error('Login API error:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      // Fallback to mock for development
-      const user = mockUsers.find(u => 
-        u.username === credentials.username && u.password === credentials.password
+      // Fallback to mock (development only)
+      const user = mockUsers.find(
+        (u) =>
+          u.username === credentials.email.split('@')[0] &&
+          u.password === credentials.password
       );
-      
       if (user) {
         const token = btoa(JSON.stringify({ user, timestamp: Date.now() }));
         return {
-          user: {
-            ...user,
-            name: user.name // Ensure name field is included
-          },
+          user,
           token,
         };
       }
-      
       throw new Error(error.response?.data?.message || 'Invalid credentials');
     }
   },
-
   signup: async (userData) => {
     try {
-      // Add username field from email for backend compatibility
       const signupData = {
         name: userData.name,
         email: userData.email,
-        username: userData.email.split('@')[0], // Use email prefix as username
+        username: userData.email.split('@')[0],
         password: userData.password,
         role: userData.role,
         department: userData.department || '',
         year: userData.year || '',
-        rollNumber: userData.rollNumber || ''
+        rollNumber: userData.rollNumber || '',
       };
-      console.log('Sending signup data:', JSON.stringify(signupData, null, 2));
+      console.log('Sending signup data:', signupData);
       const response = await api.post('/auth/signup', signupData);
-      console.log('Backend response:', JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error) {
       console.error('Signup API error:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
       throw new Error(error.response?.data?.message || 'Signup failed');
     }
   },
-
   getCurrentUser: async () => {
     try {
       const response = await api.get('/auth/me');
       return response.data;
     } catch (error) {
-      console.error('Get current user API error:', error);
-      // Fallback to mock for development
+      console.error('Get current user error:', error);
+      // fallback using token
       const token = localStorage.getItem('token');
       if (token) {
         try {
           const decoded = JSON.parse(atob(token));
           return decoded.user;
-        } catch (decodeError) {
+        } catch {
           throw new Error('Invalid token');
         }
       }
-      throw new Error('No token found');
+      throw new Error('No user found');
     }
-=======
-    const response = await api.post('/auth/login', credentials);
-    return response.data;
   },
-
-  signup: async (userData) => {
-    const response = await api.post('/auth/register', userData);
-    return response.data;
-  },
-
-  getCurrentUser: async () => {
-    const response = await api.get('/auth/me');
-    return response.data;
->>>>>>> 2bac507fbb871c094021343de590ebd96fd79b52
-  },
-
   logout: async () => {
-    await api.post('/auth/logout');
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.warn('Logout API failed (ignored)');
+    }
     localStorage.removeItem('token');
   },
-
   refreshToken: async () => {
     const response = await api.post('/auth/refresh');
     return response.data;
   },
 };
-
 export default api;
