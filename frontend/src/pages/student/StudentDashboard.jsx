@@ -38,192 +38,217 @@ const StudentDashboard = () => {
     departmentRank: 0,
     performanceStatus: 'Beginner',
   });
-  const [performanceData] = useState([]);
-  const [skillDistribution] = useState([]);
-  const [weeklyActivity] = useState([]);
-  const [subjectSkills] = useState([]);
-  const [weakSkills] = useState([]);
-  const [suggestions] = useState([]);
+  const [performanceData, setPerformanceData] = useState([]);
+  const [skillDistribution, setSkillDistribution] = useState([]);
+  const [weeklyActivity, setWeeklyActivity] = useState([]);
+  const [subjectSkills, setSubjectSkills] = useState([]);
+  const [weakSkills, setWeakSkills] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  // Define fetchAllData outside useEffect to avoid scoping issues
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      // Check if token exists
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('Dashboard - No authentication token found');
+        alert('Please login to access your dashboard');
+        return;
+      }
+
+      // Fetch user profile data from backend (includes coding platform usernames and stats)
+      console.log('Dashboard - Fetching user profile data...');
+      const profileResponse = await fetch('http://localhost:8081/api/users/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (profileResponse.status === 401) {
+        console.error('Dashboard - Authentication failed');
+        localStorage.removeItem('token');
+        alert('Your session has expired. Please login again.');
+        window.location.href = '/login';
+        return;
+      }
+
+      if (!profileResponse.ok) {
+        console.error('Dashboard - Failed to fetch profile data:', profileResponse.status);
+        throw new Error('Failed to fetch profile data');
+      }
+
+      const profileData = await profileResponse.json();
+      console.log('Dashboard - Profile data received:', profileData);
+      setProfileData(profileData);
+
+      // Set academic stats from profile or defaults
+      setAcademicStats({
+        gpa: profileData.gpa || 8.0,
+        attendance: profileData.attendance || 85,
+        assignments: profileData.assignments || 20,
+        projects: profileData.projects || 3,
+      });
+
+      // Use coding stats from profile data
+      const leetcodeStats = profileData.leetcodeStats;
+      const codechefStats = profileData.codechefStats;
+
+      if (leetcodeStats) {
+        setLeetcodeData(leetcodeStats);
+        console.log('Dashboard - LeetCode stats loaded from profile');
+      }
+
+      if (codechefStats) {
+        setCodechefData(codechefStats);
+        console.log('Dashboard - CodeChef stats loaded from profile');
+      }
+
+      // Calculate coding stats
+      const totalSubmissions = (profileData.leetcodeStats?.totalSolved || 0) + (profileData.codechefStats?.problemsSolved || 0);
+      const successRate = Math.round((totalSubmissions / Math.max(1, totalSubmissions + 50)) * 100);
+        
+      const mockCodingStats = {
+        totalSubmissions,
+        successRate,
+        currentStreak: 15,
+        longestStreak: 45,
+        rank: Math.min(profileData.leetcodeStats?.globalRanking || 0, profileData.codechefStats?.globalRank || 0),
+        totalProblems: totalSubmissions + 100,
+      };
+      setCodingStats(mockCodingStats);
+
+      // Calculate combined stats based on real data
+      const totalProblems = (profileData.leetcodeStats?.totalSolved || 0) + (profileData.codechefStats?.problemsSolved || 0);
+      const avgRating = ((profileData.leetcodeStats?.contestRating || 0) + (profileData.codechefStats?.rating || 0)) / 2;
+      const bestGlobalRank = Math.min(profileData.leetcodeStats?.globalRanking || Infinity, profileData.codechefStats?.globalRank || Infinity);
+      const totalContests = (profileData.leetcodeStats?.contestsAttended || 0) + (profileData.codechefStats?.contestsParticipated || 0);
+
+      setStats({
+        totalProblemsSolved: totalProblems,
+        skillScore: Math.round(avgRating),
+        departmentRank: bestGlobalRank === Infinity ? 0 : bestGlobalRank,
+        performanceStatus: avgRating >= 1800 ? 'Expert' : avgRating >= 1500 ? 'Advanced' : avgRating >= 1200 ? 'Intermediate' : 'Beginner',
+      });
+
+      // Update skill distribution with real LeetCode data
+      setSkillDistribution([
+        { name: 'Easy', value: profileData.leetcodeStats?.easySolved || 0 },
+        { name: 'Medium', value: profileData.leetcodeStats?.mediumSolved || 0 },
+        { name: 'Hard', value: profileData.leetcodeStats?.hardSolved || 0 },
+      ]);
+
+      // Update weekly activity based on contest participation
+      const weeklyProblems = Math.round(totalProblems / 12);
+      const weeklyHours = Math.round(totalContests * 2);
+      setWeeklyActivity([
+        { day: 'Mon', problems: Math.round(weeklyProblems * 0.15), hours: Math.round(weeklyHours * 0.1) },
+        { day: 'Tue', problems: Math.round(weeklyProblems * 0.2), hours: Math.round(weeklyHours * 0.15) },
+        { day: 'Wed', problems: Math.round(weeklyProblems * 0.1), hours: Math.round(weeklyHours * 0.05) },
+        { day: 'Thu', problems: Math.round(weeklyProblems * 0.25), hours: Math.round(weeklyHours * 0.3) },
+        { day: 'Fri', problems: Math.round(weeklyProblems * 0.15), hours: Math.round(weeklyHours * 0.2) },
+        { day: 'Sat', problems: Math.round(weeklyProblems * 0.3), hours: Math.round(weeklyHours * 0.4) },
+        { day: 'Sun', problems: Math.round(weeklyProblems * 0.2), hours: Math.round(weeklyHours * 0.15) },
+      ]);
+
+      // Update subject skills based on real performance
+      setSubjectSkills([
+        { subject: 'Problem Solving', progress: Math.min(95, (profileData.leetcodeStats?.totalSolved || 0) / 3), color: 'success' },
+        { subject: 'Algorithms', progress: Math.min(85, (profileData.leetcodeStats?.mediumSolved || 0) * 1.2), color: 'primary' },
+        { subject: 'Data Structures', progress: Math.min(80, (profileData.leetcodeStats?.easySolved || 0) / 3), color: 'warning' },
+        { subject: 'Competitive Programming', progress: Math.min(90, (profileData.codechefStats?.rating || 0) / 25), color: 'success' },
+        { subject: 'Contest Performance', progress: Math.min(95, totalContests * 1.5), color: 'primary' },
+      ]);
+
+      // Update weak skills based on actual performance gaps
+      const easyMediumRatio = (profileData.leetcodeStats?.easySolved || 0) / Math.max(1, profileData.leetcodeStats?.mediumSolved || 1);
+      const mediumHardRatio = (profileData.leetcodeStats?.mediumSolved || 0) / Math.max(1, profileData.leetcodeStats?.hardSolved || 1);
+        
+      setWeakSkills([
+        { 
+          skill: 'Hard Problems', 
+          gap: mediumHardRatio > 20 ? 40 : 15, 
+          priority: mediumHardRatio > 20 ? 'High' : 'Medium',
+          reason: `Only ${profileData.leetcodeStats?.hardSolved || 0} hard problems vs ${profileData.leetcodeStats?.mediumSolved || 0} medium`
+        },
+        { 
+          skill: 'Dynamic Programming', 
+          gap: easyMediumRatio > 3.5 ? 25 : 10, 
+          priority: 'Medium',
+          reason: `High easy:medium ratio (${easyMediumRatio.toFixed(1)}:1)`
+        },
+        { 
+          skill: 'CodeChef Contest', 
+          gap: (profileData.codechefStats?.contestsParticipated || 0) < 5 ? 20 : 5, 
+          priority: 'Low',
+          reason: `Only ${profileData.codechefStats?.contestsParticipated || 0} CodeChef contest`
+        },
+      ]);
+
+      // Update suggestions based on real performance analysis
+      setSuggestions([
+        {
+          title: 'Master Hard Problems',
+          description: `You've only solved ${profileData.leetcodeStats?.hardSolved || 0} hard problems out of ${profileData.leetcodeStats?.totalSolved || 0} total. Focus on advanced algorithms!`,
+          icon: Target,
+          color: 'danger',
+        },
+        {
+          title: 'Balance Problem Difficulty',
+          description: `Your easy:medium ratio is ${easyMediumRatio.toFixed(1)}:1. Try more medium problems to improve your contest rating!`,
+          icon: Brain,
+          color: 'warning',
+        },
+        {
+          title: 'Participate in More CodeChef Contests',
+          description: `You have ${profileData.codechefStats?.contestsParticipated || 0} CodeChef contest vs ${profileData.leetcodeStats?.contestsAttended || 0} LeetCode contests. Diversify your platform experience!`,
+          icon: Trophy,
+          color: 'primary',
+        },
+        {
+          title: 'Improve Global Ranking',
+          description: `Your best rank is #${bestGlobalRank === Infinity ? 'N/A' : bestGlobalRank.toLocaleString()}. With consistent practice, you can break into top 100k!`,
+          icon: Award,
+          color: 'success',
+        },
+      ]);
+
+      // Update performance data with real trends
+      setPerformanceData([
+        { month: 'Jan', avgScore: avgRating - 10, students: 1 },
+        { month: 'Feb', avgScore: avgRating - 5, students: 1 },
+        { month: 'Mar', avgScore: avgRating, students: 1 },
+        { month: 'Apr', avgScore: avgRating + 2, students: 1 },
+        { month: 'May', avgScore: avgRating + 5, students: 1 },
+        { month: 'Jun', avgScore: avgRating + 8, students: 1 },
+      ]);
+
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // Set fallback data to ensure page renders
+      setProfileData({
+        name: 'Student',
+        department: 'Computer Science',
+        year: '3rd Year',
+      });
+      setAcademicStats({
+        gpa: 8.0,
+        attendance: 85,
+        assignments: 20,
+        projects: 3,
+      });
+      setStats({
+        totalProblemsSolved: 0,
+        skillScore: 0,
+        departmentRank: 0,
+        performanceStatus: 'Beginner',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAllData = async () => {
-      setLoading(true);
-      try {
-        // Fetch LeetCode data
-        const leetcodeResponse = await fetch('http://localhost:8081/api/coding-platform/leetcode/test/dharaneeshguhant');
-        const leetcodeResult = await leetcodeResponse.json();
-        setLeetcodeData(leetcodeResult);
-
-        // Fetch CodeChef data
-        const codechefResponse = await fetch('http://localhost:8081/api/coding-platform/codechef/test/dharaneshguhan');
-        const codechefResult = await codechefResponse.json();
-        setCodechefData(codechefResult);
-
-        // Set profile data (mock for now)
-        const mockProfileData = {
-          name: 'Dharaneesh G',
-          email: 'dharaneesh@example.com',
-          phone: '+91 9876543210',
-          department: 'Computer Science and Engineering',
-          year: '3rd Year',
-          rollNumber: '21CS1001',
-          joinDate: '2021-08-15',
-          location: 'Chennai, India',
-        };
-        setProfileData(mockProfileData);
-
-        // Set academic stats
-        const mockAcademicStats = {
-          gpa: 8.5,
-          attendance: 92,
-          assignments: 28,
-          projects: 5,
-        };
-        setAcademicStats(mockAcademicStats);
-
-        // Calculate coding stats
-        const totalSubmissions = (leetcodeResult?.totalSolved || 0) + (codechefResult?.problemsSolved || 0);
-        const successRate = Math.round((totalSubmissions / Math.max(1, totalSubmissions + 50)) * 100);
-        
-        const mockCodingStats = {
-          totalSubmissions,
-          successRate,
-          currentStreak: 15,
-          longestStreak: 45,
-          rank: Math.min(leetcodeResult?.globalRanking || 0, codechefResult?.globalRank || 0),
-          totalProblems: totalSubmissions + 100,
-        };
-        setCodingStats(mockCodingStats);
-
-        // Calculate combined stats based on real data
-        const totalProblems = (leetcodeResult?.totalSolved || 0) + (codechefResult?.problemsSolved || 0);
-        const avgRating = ((leetcodeResult?.contestRating || 0) + (codechefResult?.rating || 0)) / 2;
-        const bestGlobalRank = Math.min(leetcodeResult?.globalRanking || Infinity, codechefResult?.globalRank || Infinity);
-        const totalContests = (leetcodeResult?.contestsAttended || 0) + (codechefResult?.contestsParticipated || 0);
-
-        setStats({
-          totalProblemsSolved: totalProblems,
-          skillScore: Math.round(avgRating),
-          departmentRank: bestGlobalRank === Infinity ? 0 : bestGlobalRank,
-          performanceStatus: avgRating >= 1800 ? 'Expert' : avgRating >= 1500 ? 'Advanced' : avgRating >= 1200 ? 'Intermediate' : 'Beginner',
-        });
-
-        // Update skill distribution with real LeetCode data
-        setSkillDistribution([
-          { name: 'Easy', value: leetcodeResult?.easySolved || 0 },
-          { name: 'Medium', value: leetcodeResult?.mediumSolved || 0 },
-          { name: 'Hard', value: leetcodeResult?.hardSolved || 0 },
-        ]);
-
-        // Update weekly activity based on contest participation
-        const weeklyProblems = Math.round(totalProblems / 12);
-        const weeklyHours = Math.round(totalContests * 2);
-        setWeeklyActivity([
-          { day: 'Mon', problems: Math.round(weeklyProblems * 0.15), hours: Math.round(weeklyHours * 0.1) },
-          { day: 'Tue', problems: Math.round(weeklyProblems * 0.2), hours: Math.round(weeklyHours * 0.15) },
-          { day: 'Wed', problems: Math.round(weeklyProblems * 0.1), hours: Math.round(weeklyHours * 0.05) },
-          { day: 'Thu', problems: Math.round(weeklyProblems * 0.25), hours: Math.round(weeklyHours * 0.3) },
-          { day: 'Fri', problems: Math.round(weeklyProblems * 0.15), hours: Math.round(weeklyHours * 0.2) },
-          { day: 'Sat', problems: Math.round(weeklyProblems * 0.3), hours: Math.round(weeklyHours * 0.4) },
-          { day: 'Sun', problems: Math.round(weeklyProblems * 0.2), hours: Math.round(weeklyHours * 0.15) },
-        ]);
-
-        // Update subject skills based on real performance
-        setSubjectSkills([
-          { subject: 'Problem Solving', progress: Math.min(95, (leetcodeResult?.totalSolved || 0) / 3), color: 'success' },
-          { subject: 'Algorithms', progress: Math.min(85, (leetcodeResult?.mediumSolved || 0) * 1.2), color: 'primary' },
-          { subject: 'Data Structures', progress: Math.min(80, (leetcodeResult?.easySolved || 0) / 3), color: 'warning' },
-          { subject: 'Competitive Programming', progress: Math.min(90, (codechefResult?.rating || 0) / 25), color: 'success' },
-          { subject: 'Contest Performance', progress: Math.min(95, totalContests * 1.5), color: 'primary' },
-        ]);
-
-        // Update weak skills based on actual performance gaps
-        const easyMediumRatio = (leetcodeResult?.easySolved || 0) / Math.max(1, leetcodeResult?.mediumSolved || 1);
-        const mediumHardRatio = (leetcodeResult?.mediumSolved || 0) / Math.max(1, leetcodeResult?.hardSolved || 1);
-        
-        setWeakSkills([
-          { 
-            skill: 'Hard Problems', 
-            gap: mediumHardRatio > 20 ? 40 : 15, 
-            priority: mediumHardRatio > 20 ? 'High' : 'Medium',
-            reason: `Only ${leetcodeResult?.hardSolved || 0} hard problems vs ${leetcodeResult?.mediumSolved || 0} medium`
-          },
-          { 
-            skill: 'Dynamic Programming', 
-            gap: easyMediumRatio > 3.5 ? 25 : 10, 
-            priority: 'Medium',
-            reason: `High easy:medium ratio (${easyMediumRatio.toFixed(1)}:1)`
-          },
-          { 
-            skill: 'CodeChef Contest', 
-            gap: (codechefResult?.contestsParticipated || 0) < 5 ? 20 : 5, 
-            priority: 'Low',
-            reason: `Only ${codechefResult?.contestsParticipated || 0} CodeChef contest`
-          },
-        ]);
-
-        // Update suggestions based on real performance analysis
-        setSuggestions([
-          {
-            title: 'Master Hard Problems',
-            description: `You've only solved ${leetcodeResult?.hardSolved || 0} hard problems out of ${leetcodeResult?.totalSolved || 0} total. Focus on advanced algorithms!`,
-            icon: Target,
-            color: 'danger',
-          },
-          {
-            title: 'Balance Problem Difficulty',
-            description: `Your easy:medium ratio is ${easyMediumRatio.toFixed(1)}:1. Try more medium problems to improve your contest rating!`,
-            icon: Brain,
-            color: 'warning',
-          },
-          {
-            title: 'Participate in More CodeChef Contests',
-            description: `You have ${codechefResult?.contestsParticipated || 0} CodeChef contest vs ${leetcodeResult?.contestsAttended || 0} LeetCode contests. Diversify your platform experience!`,
-            icon: Trophy,
-            color: 'primary',
-          },
-          {
-            title: 'Improve Global Ranking',
-            description: `Your best rank is #${bestGlobalRank === Infinity ? 'N/A' : bestGlobalRank.toLocaleString()}. With consistent practice, you can break into top 100k!`,
-            icon: Award,
-            color: 'success',
-          },
-        ]);
-
-        // Update performance data with real trends
-        setPerformanceData([
-          { month: 'Jan', avgScore: avgRating - 10, students: 1 },
-          { month: 'Feb', avgScore: avgRating - 5, students: 1 },
-          { month: 'Mar', avgScore: avgRating, students: 1 },
-          { month: 'Apr', avgScore: avgRating + 2, students: 1 },
-          { month: 'May', avgScore: avgRating + 5, students: 1 },
-          { month: 'Jun', avgScore: avgRating + 8, students: 1 },
-        ]);
-
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        // Set fallback data to ensure page renders
-        setProfileData({
-          name: 'Student',
-          department: 'Computer Science',
-          year: '3rd Year',
-        });
-        setAcademicStats({
-          gpa: 8.0,
-          attendance: 85,
-          assignments: 20,
-          projects: 3,
-        });
-        setStats({
-          totalProblemsSolved: 0,
-          skillScore: 0,
-          departmentRank: 0,
-          performanceStatus: 'Beginner',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchAllData();
   }, []);
 

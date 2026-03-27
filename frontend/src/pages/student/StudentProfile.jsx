@@ -1,37 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import StatCard from '../../components/common/StatCard';
 import ProgressBar from '../../components/common/ProgressBar';
 import { 
   User, 
   Mail, 
   Phone, 
   MapPin, 
-  Calendar, 
-  Award, 
-  Target, 
-  TrendingUp,
-  BookOpen,
-  Code,
-  Zap,
-  Trophy,
-  Star,
-  Clock,
-  CheckCircle
+  Calendar,
+  Loader2
 } from 'lucide-react';
 
 const StudentProfile = () => {
   const { user } = useAuth();
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   
-  const [profileData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 234 567 8900',
-    department: 'Computer Science',
-    year: '3rd Year',
-    rollNumber: 'CS2021001',
-    joinDate: 'September 2021',
-    location: 'New York, USA',
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    department: '',
+    year: '',
+    rollNumber: '',
+    codechefUsername: '',
+    leetcodeUsername: '',
+    joinDate: '',
+    location: '',
+    leetcodeStats: null,
+    codechefStats: null,
+  });
+
+  const [formData, setFormData] = useState({
+    department: '',
+    year: '',
+    rollNumber: '',
+    leetcodeUsername: '',
+    codechefUsername: '',
   });
 
   const [academicStats] = useState({
@@ -41,91 +46,177 @@ const StudentProfile = () => {
     projects: 8,
   });
 
-  const [codingStats] = useState({
-    totalSubmissions: 342,
-    successRate: 78,
-    currentStreak: 12,
-    longestStreak: 28,
-    rank: 12,
-    totalProblems: 450,
-  });
+  // Fetch profile data on component mount
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
 
-  const [achievements] = useState([
-    {
-      title: 'Problem Solver',
-      description: 'Solved 100+ problems',
-      icon: Trophy,
-      date: 'March 2024',
-      color: 'warning',
-    },
-    {
-      title: 'Consistent Learner',
-      description: '30-day streak',
-      icon: Zap,
-      date: 'February 2024',
-      color: 'success',
-    },
-    {
-      title: 'Top Performer',
-      description: 'Top 10% in department',
-      icon: Star,
-      date: 'January 2024',
-      color: 'primary',
-    },
-  ]);
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      
+      // Check if token exists
+      if (!token) {
+        console.error('No authentication token found');
+        alert('Please login to access your profile');
+        return;
+      }
+      
+      const response = await fetch('http://localhost:8081/api/users/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-  const [skills] = useState([
-    { name: 'JavaScript', level: 85, category: 'Programming' },
-    { name: 'Python', level: 78, category: 'Programming' },
-    { name: 'React', level: 80, category: 'Web Development' },
-    { name: 'Node.js', level: 72, category: 'Web Development' },
-    { name: 'SQL', level: 68, category: 'Database' },
-    { name: 'MongoDB', level: 65, category: 'Database' },
-  ]);
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
 
-  const [recentActivity] = useState([
-    {
-      type: 'submission',
-      title: 'Solved Binary Search Problem',
-      time: '2 hours ago',
-      status: 'success',
-    },
-    {
-      type: 'course',
-      title: 'Completed Advanced React Module',
-      time: '1 day ago',
-      status: 'success',
-    },
-    {
-      type: 'submission',
-      title: 'Attempted Dynamic Programming',
-      time: '2 days ago',
-      status: 'failed',
-    },
-    {
-      type: 'achievement',
-      title: 'Earned "Problem Solver" Badge',
-      time: '3 days ago',
-      status: 'success',
-    },
-  ]);
+      if (response.status === 401) {
+        console.error('Authentication failed - token may be expired');
+        localStorage.removeItem('token');
+        alert('Your session has expired. Please login again.');
+        window.location.href = '/login';
+        return;
+      }
 
-  const getActivityIcon = (type) => {
-    switch (type) {
-      case 'submission': return Code;
-      case 'course': return BookOpen;
-      case 'achievement': return Award;
-      default: return CheckCircle;
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Profile data received:', data);
+        setProfileData({
+          name: data.name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          department: data.department || '',
+          year: data.year || '',
+          rollNumber: data.rollNumber || '',
+          codechefUsername: data.codechefUsername || '',
+          leetcodeUsername: data.leetcodeUsername || '',
+          joinDate: data.joinDate ? new Date(data.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '',
+          location: data.location || '',
+          leetcodeStats: data.leetcodeStats || null,
+          codechefStats: data.codechefStats || null,
+        });
+        
+        setFormData({
+          department: data.department || '',
+          year: data.year || '',
+          rollNumber: data.rollNumber || '',
+          leetcodeUsername: data.leetcodeUsername || '',
+          codechefUsername: data.codechefUsername || '',
+        });
+      } else {
+        console.error('Failed to fetch profile data:', response.status, response.statusText);
+        if (response.status === 500) {
+          alert('Server error. Please try again later.');
+        } else {
+          alert('Failed to fetch profile data');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+      alert('Error fetching profile data');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusColor = (status) => {
-    return status === 'success' ? 'text-success-600' : 'text-danger-600';
+  const handleUpdateProfile = async () => {
+    try {
+      setUpdating(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8081/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        await fetchProfileData(); // Refresh data
+        setShowModal(false);
+        alert('Profile updated successfully!');
+      } else {
+        const errorData = await response.json();
+        alert('Failed to update profile: ' + (errorData.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Error updating profile');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="p-6">
+
+        {/* Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl w-full max-w-md shadow-lg">
+              <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Edit Profile</h2>
+
+              <input
+                className="w-full mb-3 p-2 border rounded"
+                placeholder="CodeChef Username"
+                value={formData.codechefUsername}
+                onChange={(e) => handleInputChange('codechefUsername', e.target.value)}
+              />
+
+              <input
+                className="w-full mb-3 p-2 border rounded"
+                placeholder="LeetCode Username"
+                value={formData.leetcodeUsername}
+                onChange={(e) => handleInputChange('leetcodeUsername', e.target.value)}
+              />
+
+              <input
+                className="w-full mb-3 p-2 border rounded"
+                placeholder="Department"
+                value={formData.department}
+                onChange={(e) => handleInputChange('department', e.target.value)}
+              />
+
+              <input
+                className="w-full mb-3 p-2 border rounded"
+                placeholder="Year"
+                value={formData.year}
+                onChange={(e) => handleInputChange('year', e.target.value)}
+              />
+
+              <input
+                className="w-full mb-3 p-2 border rounded"
+                placeholder="Roll Number"
+                value={formData.rollNumber}
+                onChange={(e) => handleInputChange('rollNumber', e.target.value)}
+              />
+
+              <div className="flex justify-end space-x-2">
+                <button className="btn" onClick={() => setShowModal(false)}>Cancel</button>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleUpdateProfile}
+                  disabled={updating}
+                >
+                  {updating ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -163,16 +254,29 @@ const StudentProfile = () => {
                   <Calendar className="w-4 h-4" />
                   <span>Joined {profileData.joinDate}</span>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium">CodeChef:</span>
+                  <span>{profileData.codechefUsername}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium">LeetCode:</span>
+                  <span>{profileData.leetcodeUsername}</span>
+                </div>
               </div>
             </div>
-            <button className="btn btn-primary">
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowModal(true)}
+            >
               Edit Profile
             </button>
           </div>
         </div>
 
-        {/* Academic Information */}
+        {/* Academic + Coding Info */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+          {/* Academic Information */}
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Academic Information
@@ -191,23 +295,36 @@ const StudentProfile = () => {
                 <span className="text-sm font-medium text-gray-900 dark:text-white">{profileData.rollNumber}</span>
               </div>
               <hr className="border-gray-200 dark:border-gray-700" />
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">GPA</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{academicStats.gpa}</p>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Profile Completion</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">85%</span>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Attendance</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{academicStats.attendance}%</p>
+                <ProgressBar
+                  value={85}
+                  color="primary"
+                  showLabel={false}
+                />
+
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Coding Profile Strength</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">75%</span>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Assignments</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{academicStats.assignments}</p>
+                <ProgressBar
+                  value={75}
+                  color="success"
+                  showLabel={false}
+                />
+
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Overall Balance</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">80%</span>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Projects</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{academicStats.projects}</p>
-                </div>
+                <ProgressBar
+                  value={80}
+                  color="warning"
+                  showLabel={false}
+                />
               </div>
             </div>
           </div>
@@ -217,169 +334,123 @@ const StudentProfile = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Coding Statistics
             </h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Submissions</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{codingStats.totalSubmissions}</p>
+            
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
+                <span className="ml-2 text-gray-600 dark:text-gray-400">Loading coding stats...</span>
               </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Success Rate</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{codingStats.successRate}%</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Streak</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{codingStats.currentStreak} days</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Department Rank</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">#{codingStats.rank}</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600 dark:text-gray-400">Overall Progress</span>
-                  <span className="text-gray-900 dark:text-white">
-                    {Math.round((codingStats.totalSubmissions / codingStats.totalProblems) * 100)}%
-                  </span>
-                </div>
-                <ProgressBar
-                  value={(codingStats.totalSubmissions / codingStats.totalProblems) * 100}
-                  color="success"
-                  showLabel={false}
-                />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600 dark:text-gray-400">Success Rate</span>
-                  <span className="text-gray-900 dark:text-white">{codingStats.successRate}%</span>
-                </div>
-                <ProgressBar
-                  value={codingStats.successRate}
-                  color="primary"
-                  showLabel={false}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+            ) : (
+              <>
+                {/* LeetCode Stats */}
+                {profileData.leetcodeStats && (
+                  <div className="mb-6">
+                    <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">LeetCode Statistics</h4>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Solved</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
+                          {profileData.leetcodeStats.totalSolved || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Easy</p>
+                        <p className="text-xl font-bold text-green-600">
+                          {profileData.leetcodeStats.easySolved || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Medium</p>
+                        <p className="text-xl font-bold text-yellow-600">
+                          {profileData.leetcodeStats.mediumSolved || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Hard</p>
+                        <p className="text-xl font-bold text-red-600">
+                          {profileData.leetcodeStats.hardSolved || 0}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600 dark:text-gray-400">LeetCode Progress</span>
+                        <span className="text-gray-900 dark:text-white">
+                          {profileData.leetcodeStats.totalSolved ? 
+                            Math.round((profileData.leetcodeStats.totalSolved / (profileData.leetcodeStats.totalQuestions || 1000)) * 100) : 0}%
+                        </span>
+                      </div>
+                      <ProgressBar
+                        value={profileData.leetcodeStats.totalSolved ? 
+                          (profileData.leetcodeStats.totalSolved / (profileData.leetcodeStats.totalQuestions || 1000)) * 100 : 0}
+                        color="primary"
+                        showLabel={false}
+                      />
+                    </div>
+                  </div>
+                )}
 
-        {/* Skills Overview */}
-        <div className="card mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Skills Overview
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {skills.map((skill, index) => (
-              <div key={index}>
-                <div className="flex justify-between items-center mb-2">
+                {/* CodeChef Stats */}
+                {profileData.codechefStats && (
                   <div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {skill.name}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                      {skill.category}
-                    </span>
+                    <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">CodeChef Statistics</h4>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Rating</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
+                          {profileData.codechefStats.rating || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Highest Rating</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
+                          {profileData.codechefStats.highestRating || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Global Rank</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
+                          #{profileData.codechefStats.globalRank || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Country Rank</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
+                          #{profileData.codechefStats.countryRank || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600 dark:text-gray-400">CodeChef Progress</span>
+                        <span className="text-gray-900 dark:text-white">
+                          {profileData.codechefStats.rating ? 
+                            Math.min(Math.round((profileData.codechefStats.rating / 3000) * 100), 100) : 0}%
+                        </span>
+                      </div>
+                      <ProgressBar
+                        value={profileData.codechefStats.rating ? 
+                          Math.min((profileData.codechefStats.rating / 3000) * 100, 100) : 0}
+                        color="success"
+                        showLabel={false}
+                      />
+                    </div>
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {skill.level}%
-                  </span>
-                </div>
-                <ProgressBar
-                  value={skill.level}
-                  color={skill.level >= 80 ? 'success' : skill.level >= 60 ? 'warning' : 'danger'}
-                  showLabel={false}
-                />
-              </div>
-            ))}
+                )}
+
+                {/* No coding stats available */}
+                {!profileData.leetcodeStats && !profileData.codechefStats && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 dark:text-gray-400">
+                      No coding platform data available. Add your LeetCode and CodeChef usernames to see your statistics.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Achievements */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Achievements
-            </h3>
-            <div className="space-y-3">
-              {achievements.map((achievement, index) => {
-                const Icon = achievement.icon;
-                return (
-                  <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className={`p-2 rounded-lg bg-${achievement.color}-100 dark:bg-${achievement.color}-900/20`}>
-                      <Icon className={`w-5 h-5 text-${achievement.color}-600 dark:text-${achievement.color}-400`} />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                        {achievement.title}
-                      </h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {achievement.description} • {achievement.date}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Recent Activity
-            </h3>
-            <div className="space-y-3">
-              {recentActivity.map((activity, index) => {
-                const Icon = getActivityIcon(activity.type);
-                return (
-                  <div key={index} className="flex items-start space-x-3">
-                    <Icon className={`w-5 h-5 mt-0.5 ${getStatusColor(activity.status)}`} />
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900 dark:text-white">
-                        {activity.title}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {activity.time}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard
-            title="Learning Hours"
-            value="248"
-            icon={Clock}
-            color="primary"
-            description="This month"
-          />
-          <StatCard
-            title="Completed Courses"
-            value="12"
-            icon={BookOpen}
-            color="success"
-            description="Total courses"
-          />
-          <StatCard
-            title="Certificates"
-            value="5"
-            icon={Award}
-            color="warning"
-            description="Earned certificates"
-          />
-          <StatCard
-            title="Study Streak"
-            value={`${codingStats.currentStreak} days`}
-            icon={TrendingUp}
-            color="success"
-            description="Current streak"
-          />
-        </div>
       </div>
     </div>
   );
